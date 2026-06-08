@@ -207,6 +207,14 @@ config BACKLIGHT_KTZ8866
 		Say Y to enable the backlight driver for the Kinetic KTZ8866
 		found in Xiaomi Mi Pad 5 series.
 
+config BACKLIGHT_KTZ8869_ICELAND
+	tristate "Backlight Driver for Kinetic KTZ8869 (oneplus-iceland)"
+	depends on I2C
+	select REGMAP_I2C
+	help
+		Say Y to enable the backlight driver for the Kinetic KTZ8869
+		found in OnePlus Pad 4 series.
+
 config BACKLIGHT_SY7758
 	tristate "Backlight Driver for Silergy SY7758"
 	depends on I2C
