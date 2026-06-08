@@ -1059,6 +1059,24 @@
 	status = "okay";
 };
 
+&spi19 {
+	status = "okay";
+
+	touchscreen@0 {
+		compatible = "novatek,NVT-ts-spi";
+		reg = <0>;
+
+		spi-max-frequency = <12000000>;
+		irq-gpios = <&tlmm 158 0x2002>;
+
+		novatek,pen-support;
+
+		panel = <&display_panel>;
+
+		firmware-name = "novatek/novatek_nt36536_fw.bin";
+	};
+};
+
 &swr1 {
 	status = "okay";
 
