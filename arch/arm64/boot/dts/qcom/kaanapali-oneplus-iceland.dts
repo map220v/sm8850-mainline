@@ -39,6 +39,32 @@
 
 	chosen { };
 
+	/* Both produced by Master KTZ8869, unfortunately gpio 14 and 15 aren't
+	 * wired to Master KTZ8869 in MP units, so vddpos and vddneg will always be active
+	 * unless KTZ8869 driver gets implemented as regulator.
+	 */
+	lcd_vddpos_5p5: lcd-vddpos-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_vddpos_5p5";
+		regulator-min-microvolt = <5500000>;
+		regulator-max-microvolt = <5500000>;
+		regulator-always-on;
+		//regulator-enable-ramp-delay = <456>;
+		//gpio = <&tlmm 14 GPIO_ACTIVE_HIGH>;
+		//enable-active-high;
+	};
+
+	lcd_vddneg_5p5: lcd-vddneg-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_vddneg_5p5";
+		regulator-min-microvolt = <5500000>;
+		regulator-max-microvolt = <5500000>;
+		regulator-always-on;
+		//regulator-enable-ramp-delay = <912>;
+		//gpio = <&tlmm 15 GPIO_ACTIVE_HIGH>;
+		//enable-active-high;
+	};
+
 	clocks {
 		xo_board: xo-board {
 			compatible = "fixed-clock";
@@ -813,6 +839,29 @@
 				};
 			};
 		};
+	};
+};
+
+&i2c14 {
+	status = "okay";
+
+	/* HWEN(enable gpio) is used instead vddio supply */
+	backlight: backlight@11 {
+		compatible = "kinetic,ktz8869a";
+		reg = <0x11>;
+		vin-supply = <&vph_pwr>;
+		enable-gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c15 {
+	status = "okay";
+
+	backlight@11 {
+		compatible = "kinetic,ktz8869b";
+		reg = <0x11>;
+		vin-supply = <&vph_pwr>;
+		enable-gpios = <&tlmm 1 GPIO_ACTIVE_HIGH>;
 	};
 };
 
