@@ -2826,10 +2826,10 @@
 			};
 		};
 
-		gmu: gmu@3d6c000 {
+		gmu: gmu@3d37000 {
 			compatible = "qcom,adreno-gmu-840.1", "qcom,adreno-gmu";
 
-			reg = <0x0 0x03d6c000 0x0 0x68000>;
+			reg = <0x0 0x03d37000 0x0 0x68000>;
 			reg-names = "gmu";
 
 			interrupts = <GIC_SPI 304 IRQ_TYPE_LEVEL_HIGH>,
