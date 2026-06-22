@@ -25,6 +25,7 @@ enum qcom_battmgr_variant {
 	QCOM_BATTMGR_SM8350,
 	QCOM_BATTMGR_SM8550,
 	QCOM_BATTMGR_X1E80100,
+	OPLUS_BATTMGR_KAANAPALI,
 };
 
 #define BATTMGR_BAT_STATUS		0x1
@@ -104,6 +105,24 @@ enum qcom_battmgr_variant {
 #define CHARGE_CTRL_END_THR_MIN		55
 #define CHARGE_CTRL_END_THR_MAX		100
 #define CHARGE_CTRL_DELTA_SOC		5
+
+
+#define NOTIF_OPLUS_OTG_ENABLE				0x50
+#define NOTIF_OPLUS_OTG_DISABLE				0x51
+#define NOTIF_OPLUS_CID_DETECT				0x53
+#define NOTIF_OPLUS_TYPEC_STATE_CHANGE			0x55
+#define NOTIF_OPLUS_PLUGIN_IRQ				0x57
+#define NOTIF_OPLUS_APSD_DONE				0x58
+#define NOTIF_OPLUS_UFCS_DISABLE_MOS			0x73
+#define NOTIF_OPLUS_PD_SOURCECAP_DONE			0x79
+#define NOTIF_OPLUS_POWER_ROLE_STATUS			0x7d
+
+#define BATTMGR_OPLUS_PROPERTY_SET			0x300
+#define BATTMGR_OPLUS_PROPERTY_GET			0x301
+#define OPLUS_USB_OTG_AP_ENABLE				12
+#define OPLUS_USB_OTG_VBUS_REGULATOR_ENABLE		19
+#define OPLUS_USB_OTG_BOOST_CURRENT			59
+#define OPLUS_CHG_EN					70
 
 struct qcom_battmgr_enable_request {
 	struct pmic_glink_hdr hdr;
@@ -308,6 +327,10 @@ struct qcom_battmgr_wireless {
 	unsigned int current_max;
 };
 
+struct qcom_battmgr_oplus {
+	bool otg_state;
+};
+
 struct qcom_battmgr {
 	struct device *dev;
 	struct pmic_glink_client *client;
@@ -331,8 +354,11 @@ struct qcom_battmgr {
 	struct qcom_battmgr_ac ac;
 	struct qcom_battmgr_usb usb;
 	struct qcom_battmgr_wireless wireless;
+	struct qcom_battmgr_oplus oplus;
 
 	struct work_struct enable_work;
+	struct work_struct oplus_otg_work;
+	struct work_struct oplus_charging_work;
 
 	/*
 	 * @lock is used to prevent concurrent power supply requests to the
@@ -566,12 +592,14 @@ static int qcom_battmgr_bat_get_property(struct power_supply *psy,
 		val->intval = battmgr->status.power_now;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-		if (unit != QCOM_BATTMGR_UNIT_mAh)
+		if (unit != QCOM_BATTMGR_UNIT_mAh &&
+		    battmgr->variant != OPLUS_BATTMGR_KAANAPALI)
 			return -ENODATA;
 		val->intval = battmgr->info.design_capacity;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
-		if (unit != QCOM_BATTMGR_UNIT_mAh)
+		if (unit != QCOM_BATTMGR_UNIT_mAh &&
+		    battmgr->variant != OPLUS_BATTMGR_KAANAPALI)
 			return -ENODATA;
 		val->intval = battmgr->info.last_full_capacity;
 		break;
@@ -1202,6 +1230,32 @@ static void qcom_battmgr_notification(struct qcom_battmgr *battmgr,
 
 	notification = le32_to_cpu(msg->notification);
 	notification &= 0xff;
+
+	if (battmgr->variant == OPLUS_BATTMGR_KAANAPALI) {
+		switch (notification) {
+		case NOTIF_OPLUS_OTG_ENABLE:
+			battmgr->oplus.otg_state = true;
+			schedule_work(&battmgr->oplus_otg_work);
+			return;
+		case NOTIF_OPLUS_OTG_DISABLE:
+			battmgr->oplus.otg_state = false;
+			schedule_work(&battmgr->oplus_otg_work);
+			return;
+		case NOTIF_OPLUS_CID_DETECT:
+			return;
+		case NOTIF_OPLUS_TYPEC_STATE_CHANGE:
+			return;
+		case NOTIF_OPLUS_PLUGIN_IRQ:
+			schedule_work(&battmgr->oplus_charging_work);
+			return;
+		case NOTIF_OPLUS_APSD_DONE:
+		case NOTIF_OPLUS_UFCS_DISABLE_MOS:
+		case NOTIF_OPLUS_PD_SOURCECAP_DONE:
+		case NOTIF_OPLUS_POWER_ROLE_STATUS:
+			return;
+		}
+	}
+
 	switch (notification) {
 	case NOTIF_BAT_INFO:
 		battmgr->info.valid = false;
@@ -1379,6 +1433,31 @@ static void qcom_battmgr_sm8350_callback(struct qcom_battmgr *battmgr,
 		return;
 	}
 
+	if (battmgr->variant == OPLUS_BATTMGR_KAANAPALI) {
+		switch (opcode) {
+		case BATTMGR_OPLUS_PROPERTY_SET:
+		case BATTMGR_OPLUS_PROPERTY_GET:
+			property = le32_to_cpu(resp->intval.property);
+			if (payload_len != sizeof(resp->intval)) {
+				dev_warn(battmgr->dev,
+					"invalid payload length for %#x request: %zd\n",
+					property, payload_len);
+				battmgr->error = -ENODATA;
+				return;
+			}
+
+			battmgr->error = le32_to_cpu(resp->intval.result);
+			if (battmgr->error)
+				goto out_complete;
+
+			if (opcode == BATTMGR_OPLUS_PROPERTY_GET) {
+				//printk("OPLUS: get property=%d value=%d result=%d\n", property, le32_to_cpu(resp->intval.value), le32_to_cpu(resp->intval.result));
+			}
+
+			goto out_complete;
+		}
+	}
+
 	switch (opcode) {
 	case BATTMGR_BAT_PROPERTY_GET:
 		property = le32_to_cpu(resp->intval.property);
@@ -1433,7 +1512,10 @@ static void qcom_battmgr_sm8350_callback(struct qcom_battmgr *battmgr,
 			battmgr->info.voltage_max = le32_to_cpu(resp->intval.value);
 			break;
 		case BATT_CURR_NOW:
-			battmgr->status.current_now = le32_to_cpu(resp->intval.value);
+			if (battmgr->variant == OPLUS_BATTMGR_KAANAPALI)
+				battmgr->status.current_now = -le32_to_cpu(resp->intval.value); /* FG1 + FG2 */
+			else
+				battmgr->status.current_now = le32_to_cpu(resp->intval.value);
 			break;
 		case BATT_TEMP:
 			val = le32_to_cpu(resp->intval.value);
@@ -1597,6 +1679,57 @@ static void qcom_battmgr_enable_worker(struct work_struct *work)
 	ret = qcom_battmgr_request(battmgr, &req, sizeof(req));
 	if (ret)
 		dev_err(battmgr->dev, "failed to request power notifications\n");
+
+	if (battmgr->variant == OPLUS_BATTMGR_KAANAPALI) {
+		ret = qcom_battmgr_request_property(battmgr, BATTMGR_OPLUS_PROPERTY_SET, OPLUS_USB_OTG_AP_ENABLE, 1);
+		if (ret)
+			dev_err(battmgr->dev, "failed to enable OTG control from AP\n");
+	}
+}
+
+static void qcom_battmgr_oplus_otg_worker(struct work_struct *work)
+{
+	struct qcom_battmgr *battmgr = container_of(work, struct qcom_battmgr, oplus_otg_work);
+	int ret;
+
+	mutex_lock(&battmgr->lock);
+	if (battmgr->oplus.otg_state) {
+		ret = qcom_battmgr_request_property(battmgr, BATTMGR_OPLUS_PROPERTY_SET, OPLUS_USB_OTG_BOOST_CURRENT, 2000);
+		if (ret) {
+			dev_err(battmgr->dev, "failed to set OTG boost current\n");
+			goto out;
+		}
+	}
+
+	ret = qcom_battmgr_request_property(battmgr, BATTMGR_OPLUS_PROPERTY_SET, OPLUS_USB_OTG_VBUS_REGULATOR_ENABLE, battmgr->oplus.otg_state);
+	if (ret) {
+		dev_err(battmgr->dev, "failed to %s OTG VBUS\n", battmgr->oplus.otg_state ? "enable" : "disable");
+		goto out;
+	}
+
+out:
+	mutex_unlock(&battmgr->lock);
+	return;
+}
+
+static void qcom_battmgr_oplus_charging_worker(struct work_struct *work)
+{
+	struct qcom_battmgr *battmgr = container_of(work, struct qcom_battmgr, oplus_charging_work);
+	int ret;
+
+	mutex_lock(&battmgr->lock);
+	/* Shouldn't happen, PlugIn notification isn't sent when OTG Enable is sent. */
+	if (!battmgr->oplus.otg_state) {
+		ret = qcom_battmgr_request_property(battmgr, BATTMGR_OPLUS_PROPERTY_SET, OPLUS_CHG_EN, 1);
+		if (ret) {
+			dev_err(battmgr->dev, "failed to enable charging\n");
+			goto out;
+		}
+	}
+
+out:
+	mutex_unlock(&battmgr->lock);
+	return;
 }
 
 static void qcom_battmgr_pdr_notify(void *priv, int state)
@@ -1618,6 +1751,7 @@ static const struct of_device_id qcom_battmgr_of_variants[] = {
 	{ .compatible = "qcom,sc8280xp-pmic-glink", .data = (void *)QCOM_BATTMGR_SC8280XP },
 	{ .compatible = "qcom,sm8550-pmic-glink", .data = (void *)QCOM_BATTMGR_SM8550 },
 	{ .compatible = "qcom,x1e80100-pmic-glink", .data = (void *)QCOM_BATTMGR_X1E80100 },
+	{ .compatible = "oplus,kaanapali-pmic-glink", .data = (void *)OPLUS_BATTMGR_KAANAPALI },
 	/* Unmatched devices falls back to QCOM_BATTMGR_SM8350 */
 	{}
 };
@@ -1690,7 +1824,8 @@ static int qcom_battmgr_probe(struct auxiliary_device *adev,
 			return dev_err_probe(dev, PTR_ERR(battmgr->wls_psy),
 					     "failed to register wireless charing power supply\n");
 	} else {
-		if (battmgr->variant == QCOM_BATTMGR_SM8550)
+		if (battmgr->variant == QCOM_BATTMGR_SM8550 ||
+		    battmgr->variant == OPLUS_BATTMGR_KAANAPALI)
 			psy_desc = &sm8550_bat_psy_desc;
 		else
 			psy_desc = &sm8350_bat_psy_desc;
@@ -1713,6 +1848,16 @@ static int qcom_battmgr_probe(struct auxiliary_device *adev,
 
 	ret = devm_work_autocancel(dev, &battmgr->enable_work,
 				   qcom_battmgr_enable_worker);
+	if (ret)
+		return ret;
+
+	ret = devm_work_autocancel(dev, &battmgr->oplus_otg_work,
+				   qcom_battmgr_oplus_otg_worker);
+	if (ret)
+		return ret;
+
+	ret = devm_work_autocancel(dev, &battmgr->oplus_charging_work,
+				   qcom_battmgr_oplus_charging_worker);
 	if (ret)
 		return ret;
 
