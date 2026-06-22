@@ -114,7 +114,7 @@
 	};
 
 	pmic-glink {
-		compatible = "qcom,kaanapali-pmic-glink";
+		compatible = "oplus,kaanapali-pmic-glink", "qcom,kaanapali-pmic-glink";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		orientation-gpios = <&tlmm 60 GPIO_ACTIVE_HIGH>;
