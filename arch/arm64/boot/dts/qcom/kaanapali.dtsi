@@ -4053,6 +4053,9 @@
 			tx-fifo-resize;
 			dma-coherent;
 
+			usb-role-switch;
+			wakeup-source;
+
 			status = "disabled";
 
 			ports {
