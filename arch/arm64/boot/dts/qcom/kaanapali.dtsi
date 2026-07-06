@@ -2742,6 +2742,22 @@
 				compatible = "operating-points-v2-adreno",
 					     "operating-points-v2";
 
+				opp-160000000 {
+					opp-hz = /bits/ 64 <160000000>;
+					opp-level = <RPMH_REGULATOR_LEVEL_LOW_SVS_D3>;
+					opp-peak-kBps = <2136718>;
+					opp-supported-hw = <0x0f>;
+					/* ACD is disabled */
+				};
+
+				opp-191000000 {
+					opp-hz = /bits/ 64 <191000000>;
+					opp-level = <RPMH_REGULATOR_LEVEL_LOW_SVS_D2_1>;
+					opp-peak-kBps = <2136718>;
+					opp-supported-hw = <0x0f>;
+					/* ACD is disabled */
+				};
+
 				opp-222000000 {
 					opp-hz = /bits/ 64 <222000000>;
 					opp-level = <RPMH_REGULATOR_LEVEL_LOW_SVS_D2>;
@@ -2798,14 +2814,6 @@
 					qcom,opp-acd-level = <0xe82c5ffd>;
 				};
 
-				opp-539000000 {
-					opp-hz = /bits/ 64 <539000000>;
-					opp-level = <RPMH_REGULATOR_LEVEL_LOW_SVS_L2>;
-					opp-peak-kBps = <6074218>;
-					opp-supported-hw = <0x0f>;
-					qcom,opp-acd-level = <0xc82b5ffd>;
-				};
-
 				opp-578000000 {
 					opp-hz = /bits/ 64 <578000000>;
 					opp-level = <RPMH_REGULATOR_LEVEL_SVS>;
@@ -2846,9 +2854,9 @@
 					qcom,opp-acd-level = <0xa82b5ffd>;
 				};
 
-				opp-967000000 {
-					opp-hz = /bits/ 64 <967000000>;
-					opp-level = <RPMH_REGULATOR_LEVEL_NOM_L1>;
+				opp-1000000000 {
+					opp-hz = /bits/ 64 <1000000000>;
+					opp-level = <RPMH_REGULATOR_LEVEL_TURBO>;
 					opp-peak-kBps = <12449218>;
 					opp-supported-hw = <0x0f>;
 					qcom,opp-acd-level = <0x882a5ffd>;
