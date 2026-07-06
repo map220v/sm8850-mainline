@@ -1406,8 +1406,6 @@
 };
 
 &usb {
-	usb-role-switch;
-
 	status = "okay";
 };
 
