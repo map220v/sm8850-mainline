@@ -227,7 +227,8 @@
 				"AMIC1", "MIC BIAS1",
 				"AMIC5", "MIC BIAS1",
 				"TX SWR_INPUT0", "ADC1_OUTPUT",
-				"TX SWR_INPUT1", "ADC4_OUTPUT";
+				"TX SWR_INPUT1", "ADC2_OUTPUT",
+				"TX SWR_INPUT2", "ADC3_OUTPUT";
 
 		primary-i2s-dai-link {
 			link-name = "Primary MI2S Playback";
