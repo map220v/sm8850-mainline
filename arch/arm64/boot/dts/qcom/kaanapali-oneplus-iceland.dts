@@ -213,6 +213,11 @@
 			reg = <0x0 0xd8000000 0x0 0x800000>;
 			no-map;
 		};
+
+		llcc_lpi_mem: llcc-lpi@ff800000 {
+			reg = <0x0 0xff800000 0x0 0x800000>;
+			no-map;
+		};
 	};
 
 	sound {
