@@ -274,6 +274,156 @@ static int csot_pp8807hb1_1_init_seq(struct mipi_dsi_multi_context *dsi_ctx)
 	return dsi_ctx->accum_err;
 }
 
+static int csot_ppd200ub2_init_seq(struct mipi_dsi_multi_context *dsi_ctx)
+{
+	/* Commands sent only to dsi1 here. qcom,sync-dual-dsi in dsi nodes will send them to both dsi ports */
+
+	/* Manufacture Command Set (CMD2_P3): CABC Function Setting */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xFF, 0x23);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xFB, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x00, 0x60);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x07, 0x20);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x08, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x09, 0x5A);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x11, 0x05);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x12, 0xA0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x13, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x15, 0xEA);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x16, 0x17);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x0A, 0x8E);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x0B, 0x8E);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x0C, 0x8E);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x0D, 0x00);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x19, 0x00);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x1A, 0x04);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x1B, 0x08);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x1C, 0x0C);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x1D, 0x10);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x1E, 0x14);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x1F, 0x18);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x20, 0x1C);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x21, 0x20);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x22, 0x24);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x23, 0x28);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x24, 0x2C);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x25, 0x30);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x26, 0x34);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x27, 0x38);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x28, 0x3C);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x2A, 0x20);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x2B, 0x20);
+
+	/* UI MODE 55=01 */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x30, 0xFF);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x31, 0xFD);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x32, 0xFC);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x33, 0xFA);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x34, 0xF8);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x35, 0xF6);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x36, 0xF4);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x37, 0xF2);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x38, 0xF0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x39, 0xEE);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x3A, 0xEC);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x3B, 0xEA);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x3D, 0xE9);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x3F, 0xE8);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x40, 0xE7);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x41, 0xE6);
+
+	/* STILL MODE 55=02 */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x45, 0xFF);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x46, 0xF9);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x47, 0xF6);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x48, 0xF2);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x49, 0xF0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x4A, 0xEC);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x4B, 0xE8);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x4C, 0xE4);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x4D, 0xE0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x4E, 0xDE);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x4F, 0xD9);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x50, 0xD6);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x51, 0xD4);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x52, 0xC2);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x53, 0xD0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x54, 0xCD);
+
+	/* MOVING MODE 55=03 */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x58, 0xFF);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x59, 0xF6);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x5A, 0xF0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x5B, 0xEB);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x5C, 0xE8);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x5D, 0xE5);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x5E, 0xE3);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x5F, 0xE0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x60, 0xDE);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x61, 0xDA);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x62, 0xD7);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x63, 0xD4);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x64, 0xD2);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x65, 0xD0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x66, 0xCC);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x67, 0xC8);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x6E, 0xB3);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x6F, 0xD0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x70, 0x00);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x71, 0xB3);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x89, 0xA4);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x8B, 0xC1);
+
+	/* Manufacture Command Set (CMD2_P0): Power / DDB Code / MTP / Gamma setting */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xff, 0x20);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xfb, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x07, 0x46);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x30, 0x10);
+
+	/* Manufacture Command Set (CMD2_P6): LTPS Display and In-cell Timing page3 */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xff, 0x26);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xfb, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x0d, 0x03);
+
+	/* Engineer Command Set (CMD3_PageA): Engineer Page A */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xff, 0xe0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xfb, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xbb, 0x00);
+
+	/* Engineer Command Set (CMD3_PageB): Engineer Page B */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xff, 0xf0);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xfb, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xe6, 0x02);
+
+	/* Manufacture Command Set (CMD2_P7): LTPS Display and In-cell Timing page4 */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xff, 0x27);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xfb, 0x01);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xd0, 0x31);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xd1, 0x05);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xde, 0x40);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xdf, 0x02);
+
+	/* User Command Set (CMD1): Basic Display Control Setting */
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xff, 0x10);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xfb, 0x01);//Don't reload registers from MTP/Default values
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x3b, 0x03, 0x12, 0x1a, 0x04, 0x04, 0x01, 0x80, 0x36, 0x36);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0xb3, 0x40);
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x51, 0x07, 0xff);//Set brightness(controls PWM signal to KTZ8869 chips)
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x53, 0x2c);//Enable backlight and dimming for CABC
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x55, 0x00);
+
+	mipi_dsi_dcs_write_seq_multi(dsi_ctx, 0x90, 0x03);//Enable DSC
+
+	mipi_dsi_dcs_exit_sleep_mode_multi(dsi_ctx);
+
+	mipi_dsi_msleep(dsi_ctx, 120);
+
+	mipi_dsi_dcs_set_display_on_multi(dsi_ctx);
+
+	mipi_dsi_msleep(dsi_ctx, 10);
+
+	return dsi_ctx->accum_err;
+}
+
 static struct drm_dsc_config csot_pp8807hb1_1_dsc_cfg = {
 	.dsc_version_major = 1,
 	.dsc_version_minor = 2,
@@ -281,6 +431,20 @@ static struct drm_dsc_config csot_pp8807hb1_1_dsc_cfg = {
 	.slice_width = 476,
 	.slice_count = 2,
 	.bits_per_component = 10,
+	.bits_per_pixel = 8 << 4,
+	.block_pred_enable = true,
+};
+
+static struct drm_dsc_config csot_ppd200ub2_dsc_cfg = {
+	/* Downstream uses DSC v1.2, but it is slightly broken on mainline, causes slice decode errors in some UI and complex or random pixel images.
+	 * DSC v1.2 has much less DSC glitches with 10bpc and 10bpp
+	 */
+	.dsc_version_major = 1,
+	.dsc_version_minor = 1,
+	.slice_height = 20,
+	.slice_width = 848,
+	.slice_count = 2,
+	.bits_per_component = 8,
 	.bits_per_pixel = 8 << 4,
 	.block_pred_enable = true,
 };
@@ -355,6 +519,69 @@ static const struct drm_display_mode csot_pp8807hb1_1_modes[] = {
 		.vsync_end = 3040 + 26 + 4,
 		.vtotal = 3040 + 26 + 4 + 50,
 	},
+};
+
+static const struct drm_display_mode csot_ppd200ub2_modes[] = {
+	{
+		/* 144Hz */
+		.clock = (3392 + 68 + 32 + 40) * (2400 + 26 + 2 + 52) * 144 / 1000,
+		.hdisplay = 3392,
+		.hsync_start = 3392 + 68,
+		.hsync_end = 3392 + 68 + 32,
+		.htotal = 3392 + 68 + 32 + 40,
+		.vdisplay = 2400,
+		.vsync_start = 2400 + 26,
+		.vsync_end = 2400 + 26 + 2,
+		.vtotal = 2400 + 26 + 2 + 52,
+	},
+	{
+		/* 120Hz */
+		.clock = (3392 + 100 + 64 + 104) * (2400 + 26 + 2 + 272) * 120 / 1000,
+		.hdisplay = 3392,
+		.hsync_start = 3392 + 100,
+		.hsync_end = 3392 + 100 + 64,
+		.htotal = 3392 + 100 + 64 + 104,
+		.vdisplay = 2400,
+		.vsync_start = 2400 + 26,
+		.vsync_end = 2400 + 26 + 2,
+		.vtotal = 2400 + 26 + 2 + 272,
+	},
+	{
+		/* 90Hz */
+		.clock = (3392 + 420 + 160 + 320) * (2400 + 26 + 2 + 52) * 90 / 1000,
+		.hdisplay = 3392,
+		.hsync_start = 3392 + 420,
+		.hsync_end = 3392 + 420 + 160,
+		.htotal = 3392 + 420 + 160 + 320,
+		.vdisplay = 2400,
+		.vsync_start = 2400 + 26,
+		.vsync_end = 2400 + 26 + 2,
+		.vtotal = 2400 + 26 + 2 + 52,
+	},
+	{
+		/* 60Hz */
+		.clock = (3392 + 100 + 64 + 104) * (2400 + 2726 + 2 + 272) * 60 / 1000,
+		.hdisplay = 3392,
+		.hsync_start = 3392 + 100,
+		.hsync_end = 3392 + 100 + 64,
+		.htotal = 3392 + 100 + 64 + 104,
+		.vdisplay = 2400,
+		.vsync_start = 2400 + 2726,
+		.vsync_end = 2400 + 2726 + 2,
+		.vtotal = 2400 + 2726 + 2 + 272,
+	},
+	{
+		/* 30Hz */
+		.clock = (3392 + 100 + 64 + 104) * (2400 + 8126 + 2 + 272) * 30 / 1000,
+		.hdisplay = 3392,
+		.hsync_start = 3392 + 100,
+		.hsync_end = 3392 + 100 + 64,
+		.htotal = 3392 + 100 + 64 + 104,
+		.vdisplay = 2400,
+		.vsync_start = 2400 + 8126,
+		.vsync_end = 2400 + 8126 + 2,
+		.vtotal = 2400 + 8126 + 2 + 272,
+	}
 };
 
 static int novatek_probe(struct mipi_dsi_device *dsi)
@@ -466,8 +693,26 @@ static const struct panel_desc csot_pp8807hb1_1_desc = {
 	.has_dcs_backlight = false,
 };
 
+static const struct panel_desc csot_ppd200ub2_desc = {
+	.width_mm = 274,
+	.height_mm = 193,
+	.bpc = 8,
+	.lanes = 4,
+	.format = MIPI_DSI_FMT_RGB888,
+	.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_CLOCK_NON_CONTINUOUS |
+		      MIPI_DSI_MODE_NO_EOT_PACKET | MIPI_DSI_MODE_VIDEO_BURST |
+		      MIPI_DSI_MODE_LPM | MIPI_DSI_MODE_DSC_ALL_SLICES_IN_PKT,
+	.dsc_cfg = &csot_ppd200ub2_dsc_cfg,
+	.modes = csot_ppd200ub2_modes,
+	.num_modes = ARRAY_SIZE(csot_ppd200ub2_modes),
+	.init_sequence = csot_ppd200ub2_init_seq,
+	.is_dual_dsi = true,
+	.has_dcs_backlight = false,
+};
+
 static const struct of_device_id novatek_of_match[] = {
 	{ .compatible = "csot,pp8807hb1-1", .data = &csot_pp8807hb1_1_desc },
+	{ .compatible = "csot,ppd200ub2", .data = &csot_ppd200ub2_desc },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, novatek_of_match);
