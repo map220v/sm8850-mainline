@@ -172,6 +172,13 @@ struct scmi_quirk {
 /* Global Quirks Definitions */
 DEFINE_SCMI_QUIRK(clock_rates_triplet_out_of_spec, NULL, NULL, NULL);
 DEFINE_SCMI_QUIRK(perf_level_get_fc_force, "Qualcomm", NULL, "0x20000-");
+/*
+ * Qualcomm CPUCP ("PDP0") does not implement the SMT channel_status
+ * handshake on the P2A channel: notifications keep flowing without the
+ * agent ever writing CHANNEL_FREE, and on Kaanapali the agent's write of
+ * that flag from the notification IRQ never completes and wedges the CPU.
+ */
+DEFINE_SCMI_QUIRK(p2a_no_channel_free_ack, "Qualcomm", "PDP0", NULL);
 
 /*
  * Quirks Pointers Array
@@ -182,6 +189,7 @@ DEFINE_SCMI_QUIRK(perf_level_get_fc_force, "Qualcomm", NULL, "0x20000-");
 static struct scmi_quirk *scmi_quirks_table[] = {
 	__DECLARE_SCMI_QUIRK_ENTRY(clock_rates_triplet_out_of_spec),
 	__DECLARE_SCMI_QUIRK_ENTRY(perf_level_get_fc_force),
+	__DECLARE_SCMI_QUIRK_ENTRY(p2a_no_channel_free_ack),
 	NULL
 };
 

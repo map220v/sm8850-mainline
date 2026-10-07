@@ -1071,6 +1071,9 @@ static inline void scmi_clear_channel(struct scmi_info *info,
 		return;
 	}
 
+	/* Platform does not consume the P2A CHANNEL_FREE ack; skip the write */
+	SCMI_QUIRK(p2a_no_channel_free_ack, { return; });
+
 	if (info->desc->ops->clear_channel)
 		info->desc->ops->clear_channel(cinfo);
 }
