@@ -8,6 +8,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/leds/common.h>
+#include <dt-bindings/pinctrl/qcom,pmic-gpio.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
 #include "kaanapali.dtsi"
 
@@ -1204,6 +1205,14 @@
 		output-disable;
 		power-source = <1>; /* 1.8V */
 	};
+	pogo_kbd_tx_en_default: pogo-kbd-tx-en-default-state {
+		pins = "gpio6";
+		function = "normal";
+		power-source = <0>;
+		bias-disable;
+		output-low;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_LOW>;
+	};
 };
 
 &pmh0110_f_e0_gpios {
@@ -1221,6 +1230,14 @@
 		input-disable;
 		output-enable;
 		power-source = <1>; /* 1.8v */
+	};
+	pogo_kbd_power_default: pogo-kbd-power-default-state {
+		pins = "gpio12";
+		function = "normal";
+		power-source = <0>;
+		bias-disable;
+		output-low;
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_MED>;
 	};
 };
 
@@ -1421,10 +1438,56 @@
 			bias-disable;
 		};
 	};
+
+	/* pogo keyboard: shared TRX wire, TX gated by a PMIC GPIO */
+	pogo_uart17_default: pogo-uart17-default-state {
+		tx-pins {
+			pins = "gpio22";
+			function = "qup3_se4";
+			drive-strength = <8>;
+			bias-disable;
+		};
+
+		rx-pins {
+			pins = "gpio23";
+			function = "qup3_se4";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	pogo_kbd_wake_default: pogo-kbd-wake-default-state {
+		pins = "gpio151";
+		function = "gpio";
+		drive-strength = <2>;
+		bias-disable;
+	};
 };
 
 &uart7 {
 	status = "okay";
+};
+
+&uart17 {
+	pinctrl-0 = <&pogo_uart17_default>;
+
+	status = "okay";
+
+	keyboard {
+		compatible = "oneplus,pogo-keyboard";
+
+		pinctrl-0 = <&pogo_kbd_wake_default>,
+			    <&pogo_kbd_power_default>,
+			    <&pogo_kbd_tx_en_default>;
+		pinctrl-names = "default";
+
+		power-gpios = <&pmh0110_f_e0_gpios 12 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&pmh0110_d_e0_gpios 6 GPIO_ACTIVE_HIGH>;
+		wake-gpios = <&tlmm 151 GPIO_ACTIVE_LOW>;
+
+		touchpad-xy-max = <2560 1440>;
+		touchpad-xy-resolution = <24 25>;
+	};
 };
 
 &uart18 {
