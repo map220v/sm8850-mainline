@@ -11,3 +11,4 @@ obj-$(CONFIG_CRYPTO)	+= crypto/
 
 # for cleaning
 subdir- += boot
+obj-$(CONFIG_GUNYAH_HYPERCALLS)	+= gunyah/
