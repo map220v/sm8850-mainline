@@ -1020,6 +1020,12 @@
 	};
 };
 
+&iris {
+	firmware-name = "qcom/kaanapali/iceland/vpu40_2v.mbn";
+
+	status = "okay";
+};
+
 &mdss {
 	status = "okay";
 };
