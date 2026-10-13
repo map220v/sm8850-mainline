@@ -803,6 +803,22 @@ config VIDEO_S5KJN1
 	  To compile this driver as a module, choose M here: the
 	  module will be called s5kjn1.
 
+config VIDEO_SMARTSENS_SC
+	tristate "SmartSens SC1300CS/SC820CS sensor support"
+	depends on OF
+	select MEDIA_CONTROLLER
+	select V4L2_CCI_I2C
+	select VIDEO_V4L2_SUBDEV_API
+	help
+	  Driver for the SmartSens SC1300CS (13MP) and SC820CS (8MP) RAW10
+	  MIPI CSI-2 camera sensors.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called smartsens-sc.
+
+	  To compile this driver as a module, choose M here: the
+	  module will be called smartsens-sc.
+
 config VIDEO_T4KA3
 	tristate "Toshiba T4KA3 sensor support"
 	depends on ACPI || COMPILE_TEST

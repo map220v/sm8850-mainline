@@ -14,10 +14,13 @@ description:
   with 100 mA output current sink capability, designed for linear control of
   voice coil motors (VCM) in camera lenses. This chip provides a Smart Actuator
   Control (SAC) mode intended for driving voice coil lenses in camera modules.
+  The DW9714V exposes the same register layout in its register-mapped
+  ("advanced") mode.
 
 properties:
   compatible:
     enum:
+      - dongwoon,dw9714v
       - dongwoon,dw9718s
       - dongwoon,dw9719
       - dongwoon,dw9761

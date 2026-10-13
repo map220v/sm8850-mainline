@@ -713,6 +713,12 @@
 			regulator-allow-set-load;
 			regulator-allowed-modes = <RPMH_REGULATOR_MODE_LPM
 						   RPMH_REGULATOR_MODE_AUTO>;
+			/*
+			 * Also the pull-up rail of the camera I2C bus (SE9); a
+			 * transfer to the AF actuator with this rail down
+			 * wedges the GENI/GPI engine until reboot.
+			 */
+			regulator-always-on;
 		};
 
 		vreg_l3f_0p8: ldo3 {
@@ -890,6 +896,47 @@
 	};
 };
 
+&camss {
+	/*
+	 * CSIPHY core 0.88 V and PLL 1.2 V rails, per the vendor DT:
+	 * L1D feeds every PLL, L3I the cores of PHY 0/1/3/5, L3D PHY 2/4.
+	 */
+	vdd-csiphy0-0p8-supply = <&vreg_l3i_0p8>;
+	vdd-csiphy0-1p2-supply = <&vreg_l1d_1p2>;
+	vdd-csiphy1-0p8-supply = <&vreg_l3i_0p8>;
+	vdd-csiphy1-1p2-supply = <&vreg_l1d_1p2>;
+	vdd-csiphy2-0p8-supply = <&vreg_l3d_0p8>;
+	vdd-csiphy2-1p2-supply = <&vreg_l1d_1p2>;
+	vdd-csiphy3-0p8-supply = <&vreg_l3i_0p8>;
+	vdd-csiphy3-1p2-supply = <&vreg_l1d_1p2>;
+	vdd-csiphy4-0p8-supply = <&vreg_l3d_0p8>;
+	vdd-csiphy4-1p2-supply = <&vreg_l1d_1p2>;
+	vdd-csiphy5-0p8-supply = <&vreg_l3i_0p8>;
+	vdd-csiphy5-1p2-supply = <&vreg_l1d_1p2>;
+
+	status = "okay";
+
+	ports {
+		/* rear sensor, 4 D-PHY data lanes */
+		port@4 {
+			csiphy4_ep: endpoint {
+				clock-lanes = <4>;
+				data-lanes = <0 1 2 3>;
+				remote-endpoint = <&cam_rear_ep>;
+			};
+		};
+
+		/* front sensor, 4 D-PHY data lanes */
+		port@5 {
+			csiphy5_ep: endpoint {
+				clock-lanes = <4>;
+				data-lanes = <0 1 2 3>;
+				remote-endpoint = <&cam_front_ep>;
+			};
+		};
+	};
+};
+
 &gpu_zap_shader {
 	firmware-name = "qcom/kaanapali/iceland/gen80200_zap.mbn";
 };
@@ -990,6 +1037,113 @@
 				wcd_usbss_sbu_mux: endpoint {
 					remote-endpoint = <&pmic_glink_sbu>;
 				};
+			};
+		};
+	};
+};
+
+/*
+ * Camera I2C bus (QUP wrap2 SE1) is physically shared with the SEE
+ * (ADSP), which owns it by default for AON/virtual camera sensors.
+ * geni_i2c stays disabled: oplus_camres below instantiates it from
+ * this node only while the AP holds the bus, so the SE is untouched
+ * (no firmware load, no interconnect votes) whenever SEE owns it.
+ */
+&i2c9 {
+	status = "disabled";
+
+	/* the dynamically-created geni device must not claim gpio4/5:
+	 * camres owns the pin states for the shared bus */
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+};
+
+/*
+ * The special camera i2c bus: camera sensor/VCM children hang here.
+ * Released to the SEE by default; write 1 to force_start_i2c (after
+ * userspace has told SEE to let go) to start I2C on the AP side.
+ */
+&oplus_camres {
+	compatible = "oplus,camres";
+	i2c-bus = <&i2c9>;
+
+	/* camera_handshake SUID (SEE SUID registry) */
+	sns,suid-hi = /bits/ 64 <0xa7167528f835f4ee>;
+	sns,suid-lo = /bits/ 64 <0xe0e3f77b504b96a1>;
+
+	pinctrl-names = "active", "released";
+	pinctrl-0 = <&qup_i2c9_data_clk>;
+	pinctrl-1 = <&qup_i2c9_release>;
+
+	status = "okay";
+
+	camera_rear: camera@36 {
+		compatible = "smartsens,sc1300cs";
+		reg = <0x36>;
+
+		orientation = <1>;
+
+		clocks = <&rpmhcc RPMH_DIV_CLK1>;
+
+		/* vendor drives the pin high while the sensor runs */
+		reset-gpios = <&pmh0110_g_e0_gpios 14 GPIO_ACTIVE_LOW>;
+
+		pinctrl-0 = <&cam_rear_mclk_default>, <&cam_rear_rst_default>;
+		pinctrl-names = "default";
+
+		avdd-supply = <&vreg_l14b_2p8>;
+		dvdd-supply = <&vreg_l1f_1p2>;
+		dovdd-supply = <&vreg_l2f_1p8>;
+		afvdd-supply = <&vreg_l16b_2p8>;
+
+		flash-leds = <&pmh0101_flash_led0>;
+
+		port {
+			cam_rear_ep: endpoint {
+				data-lanes = <1 2 3 4>;
+				/* 1324.8 Mbit/s per lane (vendor 4160x3120 @ 30 fps) */
+				link-frequencies = /bits/ 64 <662400000>;
+				remote-endpoint = <&csiphy4_ep>;
+			};
+		};
+	};
+
+	/*
+	 * Rear AF actuator, Dongwoon DW9714V (IC INFO 0xfe). On this board
+	 * it powers up in its register-mapped mode, served by the dw9719
+	 * driver. Vendor 8-bit address 0x18.
+	 */
+		camera_rear_vcm: camera-lens@c {
+			compatible = "dongwoon,dw9714v";
+			reg = <0x0c>;
+
+			vdd-supply = <&vreg_l16b_2p8>;
+		};
+
+	/* Front 8MP, SmartSens SC820CS */
+	camera_front: camera@10 {
+		compatible = "smartsens,sc820cs";
+		reg = <0x10>;
+
+		orientation = <0>;
+
+		clocks = <&rpmhcc RPMH_DIV_CLK1>;
+
+		reset-gpios = <&pmh0110_g_e0_gpios 13 GPIO_ACTIVE_LOW>;
+
+		pinctrl-0 = <&cam_front_mclk_default>, <&cam_front_rst_default>;
+		pinctrl-names = "default";
+
+		avdd-supply = <&vreg_l14b_2p8>;
+		dvdd-supply = <&vreg_l1f_1p2>;
+		dovdd-supply = <&vreg_l2f_1p8>;
+
+		port {
+			cam_front_ep: endpoint {
+				data-lanes = <1 2 3 4>;
+				/* 660 Mbit/s per lane (vendor 3264x2448 @ 30 fps) */
+				link-frequencies = /bits/ 64 <330000000>;
+				remote-endpoint = <&csiphy5_ep>;
 			};
 		};
 	};
@@ -1150,6 +1304,20 @@
 	};
 };
 
+&pmh0101_flash {
+	status = "okay";
+
+	/* rear camera flash; vendor DT drives channels 1+4 */
+	pmh0101_flash_led0: led-0 {
+		function = LED_FUNCTION_FLASH;
+		color = <LED_COLOR_ID_WHITE>;
+		led-sources = <1>, <4>;
+		led-max-microamp = <500000>;
+		flash-max-microamp = <2000000>;
+		flash-max-timeout-us = <1280000>;
+	};
+};
+
 &pmh0101_gpios {
 	key_vol_down_default: key-vol-down-default-state {
 		pins = "gpio6";
@@ -1224,9 +1392,53 @@
 	};
 };
 
+&pmh0110_g_e0_gpios {
+	/*
+	 * Camera reset lines (vendor "CAM_RESET1_1P8" / "CAM_RESET4"):
+	 * level is driven by the sensor driver, this only sets the pad
+	 * config. The vendor active state uses power-source 2, which this
+	 * PMIC's GPIO pads reject upstream (only VIN0/VIN1 exist), so use
+	 * the 1.8 V source like the other pmh0110 states on this board.
+	 */
+	cam_rear_rst_default: cam-rear-rst-default-state {
+		pins = "gpio14";
+		function = "normal";
+		input-disable;
+		output-enable;
+		power-source = <1>; /* 1.8V */
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_LOW>;
+	};
+
+	cam_front_rst_default: cam-front-rst-default-state {
+		pins = "gpio13";
+		function = "normal";
+		input-disable;
+		output-enable;
+		power-source = <1>; /* 1.8V */
+		qcom,drive-strength = <PMIC_GPIO_STRENGTH_LOW>;
+	};
+};
+
 &pmih0108_e1_eusb2_repeater {
 	vdd18-supply = <&vreg_l15b_1p8>;
 	vdd3-supply = <&vreg_l5b_3p1>;
+};
+
+&pmk8850_gpios {
+	/* 19.2 MHz camera MCLK outputs (RPMh DIV_CLK1 buffer, func2) */
+	cam_rear_mclk_default: cam-rear-mclk-default-state {
+		pins = "gpio2";
+		function = "func2";
+		output-enable;
+		power-source = <0>;
+	};
+
+	cam_front_mclk_default: cam-front-mclk-default-state {
+		pins = "gpio1";
+		function = "func2";
+		output-enable;
+		power-source = <0>;
+	};
 };
 
 &pon_resin {

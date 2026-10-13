@@ -85,6 +85,19 @@ config QCOM_PD_MAPPER
 	  implementation of the service. It is a simpler alternative to the
 	  userspace daemon.
 
+config OPLUS_CAMRES
+	tristate "OPlus camera shared bus resource manager"
+	depends on ARCH_QCOM || COMPILE_TEST
+	depends on I2C && PM && PINCTRL
+	depends on QRTR
+	help
+	  Manages the camera I2C bus (QUP wrap2 SE1) shared between the AP
+	  (geni_i2c) and the SEE (ADSP sensor subsystem).  By default the
+	  pins are released to high-Z so SEE can use the bus for AON and
+	  virtual sensors; consumers acquire it via oplus_camres_acquire()
+	  or the force_start_i2c sysfs attribute, and transfers fail with
+	  -EBUSY while SEE holds the bus.
+
 config QCOM_PDR_HELPERS
 	tristate
 	select QCOM_QMI_HELPERS

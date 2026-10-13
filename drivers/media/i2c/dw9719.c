@@ -10,6 +10,7 @@
 
 #include <linux/delay.h>
 #include <linux/i2c.h>
+#include <linux/oplus-camres.h>
 #include <linux/pm_runtime.h>
 #include <linux/regulator/consumer.h>
 #include <linux/types.h>
@@ -45,6 +46,15 @@
 #define DW9719_INFO			CCI_REG8(0)
 #define DW9719_ID			0xF1
 #define DW9761_ID			0xF4
+/*
+ * DW9714V in its register-mapped ("advanced") mode: IC INFO reads
+ * manufacturer 0xF / model 0xE and the CONTROL/VCM/STATUS/MODE/FREQ
+ * registers sit at the DW9719 offsets.
+ */
+#define DW9714V_ID			0xFE
+/* vendor init for the OnePlus Pad 4 module: MODE 0x80, FREQ 0x79 */
+#define DW9714V_DEFAULT_SAC		2
+#define DW9714V_DEFAULT_VCM_FREQ	0x79
 
 #define DW9719_CONTROL			CCI_REG8(2)
 #define DW9719_STANDBY			0x00
@@ -75,6 +85,7 @@
 #define to_dw9719_device(x) container_of(x, struct dw9719_device, sd)
 
 enum dw9719_model {
+	DW9714V,
 	DW9718S,
 	DW9719,
 	DW9761,
@@ -100,6 +111,7 @@ struct dw9719_device {
 static int dw9719_power_down(struct dw9719_device *dw9719)
 {
 	u32 reg_pwr = dw9719->model == DW9718S ? DW9718S_PD : DW9719_CONTROL;
+	int ret;
 
 	/*
 	 * Worth engaging the internal SHUTDOWN mode especially due to the
@@ -107,7 +119,11 @@ static int dw9719_power_down(struct dw9719_device *dw9719)
 	 */
 	if (cci_write(dw9719->regmap, reg_pwr, DW9719_SHUTDOWN, NULL))
 		dev_err(dw9719->dev, "Error writing to power register\n");
-	return regulator_disable(dw9719->regulator);
+	ret = regulator_disable(dw9719->regulator);
+
+	/* last I2C is done: hand the shared bus back to SEE */
+	oplus_camres_release(dw9719->dev);
+	return ret;
 }
 
 static int dw9719_power_up(struct dw9719_device *dw9719, bool detect)
@@ -117,9 +133,14 @@ static int dw9719_power_up(struct dw9719_device *dw9719, bool detect)
 	int ret;
 	int err;
 
-	ret = regulator_enable(dw9719->regulator);
+	/* the bus is SEE-owned by default: take it before any I2C */
+	ret = oplus_camres_acquire(dw9719->dev);
 	if (ret)
 		return ret;
+
+	ret = regulator_enable(dw9719->regulator);
+	if (ret)
+		goto err_release;
 
 	/*
 	 * Need 100us to transition from SHUTDOWN to STANDBY.
@@ -150,9 +171,14 @@ static int dw9719_power_up(struct dw9719_device *dw9719, bool detect)
 
 		ret = cci_read(dw9719->regmap, DW9719_INFO, &val, NULL);
 		if (ret < 0)
-			return ret;
+			goto err_power_down;
 
 		switch (val) {
+		case DW9714V_ID:
+			dw9719->model = DW9714V;
+			dw9719->sac_mode = DW9714V_DEFAULT_SAC;
+			dw9719->vcm_freq = DW9714V_DEFAULT_VCM_FREQ;
+			break;
 		case DW9719_ID:
 			dw9719->model = DW9719;
 			dw9719->mode_low_bits = 0x00;
@@ -168,7 +194,8 @@ static int dw9719_power_up(struct dw9719_device *dw9719, bool detect)
 		default:
 			dev_err(dw9719->dev,
 				"Error unknown device id 0x%02llx\n", val);
-			return -ENXIO;
+			ret = -ENXIO;
+			goto err_power_down;
 		}
 
 props:
@@ -188,6 +215,7 @@ props:
 	}
 
 	switch (dw9719->model) {
+	case DW9714V:
 	case DW9800K:
 		cci_write(dw9719->regmap, DW9719_CONTROL, DW9719_ENABLE_RINGING, &ret);
 		cci_write(dw9719->regmap, DW9719_MODE,
@@ -219,8 +247,15 @@ props:
 	}
 
 	if (ret)
-		dw9719_power_down(dw9719);
+		goto err_power_down;
 
+	return 0;
+
+err_power_down:
+	dw9719_power_down(dw9719);	/* also hands the bus back */
+	return ret;
+err_release:
+	oplus_camres_release(dw9719->dev);
 	return ret;
 }
 
@@ -393,6 +428,12 @@ static int dw9719_probe(struct i2c_client *client)
 	 * will work.
 	 */
 
+	/* camres reprobes us once SEE hands out the shared bus */
+	if (!oplus_camres_is_ready()) {
+		ret = -EPROBE_DEFER;
+		goto err_cleanup_media;
+	}
+
 	ret = dw9719_power_up(dw9719, true);
 	if (ret)
 		goto err_cleanup_media;
@@ -440,6 +481,7 @@ static void dw9719_remove(struct i2c_client *client)
 }
 
 static const struct i2c_device_id dw9719_id_table[] = {
+	{ .name = "dw9714v", .driver_data = (kernel_ulong_t)DW9714V },
 	{ .name = "dw9718s", .driver_data = (kernel_ulong_t)DW9718S },
 	{ .name = "dw9719", .driver_data = (kernel_ulong_t)DW9719 },
 	{ .name = "dw9761", .driver_data = (kernel_ulong_t)DW9761 },
@@ -449,6 +491,7 @@ static const struct i2c_device_id dw9719_id_table[] = {
 MODULE_DEVICE_TABLE(i2c, dw9719_id_table);
 
 static const struct of_device_id dw9719_of_table[] = {
+	{ .compatible = "dongwoon,dw9714v", .data = (const void *)DW9714V },
 	{ .compatible = "dongwoon,dw9718s", .data = (const void *)DW9718S },
 	{ .compatible = "dongwoon,dw9719", .data = (const void *)DW9719 },
 	{ .compatible = "dongwoon,dw9761", .data = (const void *)DW9761 },
